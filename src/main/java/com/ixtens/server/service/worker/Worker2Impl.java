@@ -13,7 +13,7 @@ public class Worker2Impl implements WorkerService {
     public Worker2Impl() {
     }
 
-    public Result doSlowWork(Request request) {
+    public Result doSlowWork() {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {

@@ -46,14 +46,14 @@ public class TaskForwarderService {
                 .orElseThrow(() -> new WorkerMethodNotFoundException(requestDto.getService(), requestDto.getMethod()));
         method.setAccessible(true);
         int parameterCount = method.getParameterCount();
-        if (parameterCount != requestDto.getRequest().getParams().length){
+        if (parameterCount != requestDto.getRequest().getParams().length) {
             throw new WrongParametersCountException(parameterCount, requestDto.getRequest().getParams().length);
         }
         try {
-            if (parameterCount == 0){
+            if (parameterCount == 0) {
                 return (Result) method.invoke(workerService);
-            }else {
-                return (Result) method.invoke(workerService, requestDto.getRequest());
+            } else {
+                return (Result) method.invoke(workerService, requestDto.getRequest().getParams());
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             logger.error(e.getMessage());

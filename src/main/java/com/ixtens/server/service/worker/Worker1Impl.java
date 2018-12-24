@@ -14,7 +14,7 @@ public class Worker1Impl implements WorkerService {
 
     }
 
-    public Result doWork(Request request) {
+    public Result doWork() {
         logger.info("in class worker1 method do work");
         Result result = new Result(1, "string from worker 1");
         return result;

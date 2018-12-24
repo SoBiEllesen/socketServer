@@ -33,7 +33,8 @@ public class RequestDto extends Dto {
     @Override
     public String toString() {
         return "RequestDto{" +
-               "service='" + service + '\'' +
+               "id=" + getId() +
+               " service='" + service + '\'' +
                ", method='" + method + '\'' +
                ", request=" + request +
                '}';

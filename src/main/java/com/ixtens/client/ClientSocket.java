@@ -24,6 +24,7 @@ public class ClientSocket {
             executorService.awaitTermination(20, TimeUnit.SECONDS);
         } catch (IOException | InterruptedException e) {
             logger.error(e);
+            Thread.currentThread().interrupt();
         }
     }
 }

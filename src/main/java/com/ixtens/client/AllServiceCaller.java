@@ -1,8 +1,13 @@
 package com.ixtens.client;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.util.concurrent.ExecutionException;
 
 public class AllServiceCaller implements Runnable {
+
+    private static Log logger = LogFactory.getLog(AllServiceCaller.class);
 
     private final Client client;
 
@@ -20,7 +25,8 @@ public class AllServiceCaller implements Runnable {
             client.remoteCall("testService", "getCurrentDate", new Object[]{});
             client.remoteCall("service3", "wrongService", new Object[]{});
         } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e);
+            Thread.currentThread().interrupt();
         }
     }
 }

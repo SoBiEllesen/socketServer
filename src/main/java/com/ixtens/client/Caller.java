@@ -22,7 +22,8 @@ public class Caller implements Runnable {
                 logger.info(client.remoteCall("testService", "sleep", new Object[]{}));
                 logger.info(client.remoteCall("testService", "getCurrentDate", new Object[]{}));
             } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                break;
             }
         }
     }

@@ -83,6 +83,7 @@ public class Client implements AutoCloseable {
                     } catch (InterruptedException e) {
                         logger.error(e);
                         Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }

@@ -11,10 +11,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Client implements AutoCloseable {
 
@@ -25,7 +25,8 @@ public class Client implements AutoCloseable {
     private ObjectInputStream fromServer;
     private ObjectOutputStream toServer;
     private boolean stop = false;
-    private Map<UUID, PairTimestampFuture<Object>> mapWithFuture = new ConcurrentHashMap<>();
+    private AtomicInteger idGenerator = new AtomicInteger(0);
+    private Map<Integer, PairTimestampFuture<Object>> mapWithFuture = new ConcurrentHashMap<>();
 
     public Client(String host, int port) throws IOException {
         logger.info("start create client");
@@ -38,11 +39,11 @@ public class Client implements AutoCloseable {
         logger.info("end client client");
     }
 
-    public Object remoteCall(String serviceName, String methodName, Object[] params) {
-        if (stop){
+    public Object remoteCall(String serviceName, String methodName, Object[] params) throws ExecutionException, InterruptedException {
+        if (stop) {
             return null;
         }
-        RequestDto requestDto = new RequestDto(UUID.randomUUID(), serviceName, methodName, new Request(params));
+        RequestDto requestDto = new RequestDto(idGenerator.getAndIncrement(), serviceName, methodName, new Request(params));
         logger.info("start new remoteCall with " + requestDto.toString());
         CompletableFuture<Object> future = new CompletableFuture<>();
         mapWithFuture.put(requestDto.getId(), new PairTimestampFuture<>(future));
@@ -51,15 +52,10 @@ public class Client implements AutoCloseable {
         } catch (IOException e) {
             logger.error(e);
         }
-        Object result = null;
-        try {
-            result = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error(e);
-        }
-        if( result == null){
+        Object result = future.get();
+        if (result == null) {
             logger.info("not response for id " + requestDto.getId());
-        }else {
+        } else {
             logger.info("get response " + result.toString());
         }
         return result;
@@ -73,18 +69,21 @@ public class Client implements AutoCloseable {
         new Thread(() -> {
             logger.debug("start endless clean cache");
             while (!stop) {
-                logger.debug("trying to clean futures map size is " + mapWithFuture.size());
-                mapWithFuture.keySet().stream()
-                        .filter(uuid -> mapWithFuture.get(uuid).isExpired())
-                        .forEach(uuid -> {
-                            mapWithFuture.get(uuid).getFuture().complete(new ResponseDto(uuid, "Socket Timeout"));
-                            logger.debug("future with uuid " + uuid + " was removed from map");
-                            mapWithFuture.remove(uuid);
-                        });
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    logger.error(e);
+                if (!Thread.interrupted()) {
+                    logger.debug("trying to clean futures map size is " + mapWithFuture.size());
+                    mapWithFuture.keySet().stream()
+                            .filter(uuid -> mapWithFuture.get(uuid).isExpired())
+                            .forEach(id -> {
+                                mapWithFuture.get(id).getFuture().complete(new ResponseDto(id, "Future removed from waiting map"));
+                                logger.debug("future with id " + id + " was removed from map");
+                                mapWithFuture.remove(id);
+                            });
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        logger.error(e);
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
         }).start();
@@ -96,17 +95,13 @@ public class Client implements AutoCloseable {
             while (!stop) {
                 try {
                     logger.debug("in unlimited read map size " + mapWithFuture.size());
-                    if (!mapWithFuture.isEmpty()) {
-                        ResponseDto response = (ResponseDto) fromServer.readObject();
-                        if (response.getId() != null && mapWithFuture.containsKey(response.getId())) {
-                            CompletableFuture<Object> future = mapWithFuture.get(response.getId()).getFuture();
-                            future.complete(response);
-                            mapWithFuture.remove(response.getId());
-                        }
-                    } else {
-                        Thread.sleep(1000);
+                    ResponseDto response = (ResponseDto) fromServer.readObject();
+                    if (response.getId() != null && mapWithFuture.containsKey(response.getId())) {
+                        CompletableFuture<Object> future = mapWithFuture.get(response.getId()).getFuture();
+                        future.complete(response);
+                        mapWithFuture.remove(response.getId());
                     }
-                } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                } catch (IOException | ClassNotFoundException e) {
                     logger.error(e);
                     stop = true;
                 }
@@ -115,15 +110,12 @@ public class Client implements AutoCloseable {
     }
 
     @Override
-    public void close() throws InterruptedException, IOException {
-        logger.info("In close Client");
-        while (!mapWithFuture.isEmpty()) {
-            Thread.sleep(500);
-        }
+    public void close() throws IOException {
         logger.info("start close client");
         stop = true;
         toServer.close();
         fromServer.close();
         socket.close();
+        logger.info("client is closed");
     }
 }

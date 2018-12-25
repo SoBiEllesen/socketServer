@@ -1,21 +1,20 @@
 package com.ixtens.dto;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 public abstract class Dto implements Serializable {
 
-    private UUID id;
+    private Integer id;
 
-    public Dto(UUID id) {
+    public Dto(Integer id) {
         this.id = id;
     }
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 }

@@ -8,12 +8,7 @@ public class Result implements Serializable {
     private String string;
     private Object data;
 
-    public Result(Integer resultInt, String string) {
-        this.resultInt = resultInt;
-        this.string = string;
-    }
-
-    public Result(Object data){
+    public Result(Object data) {
         this.data = data;
     }
 

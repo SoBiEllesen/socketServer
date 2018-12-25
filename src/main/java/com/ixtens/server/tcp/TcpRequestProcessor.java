@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TcpRequestProcessor implements Connection.Listener {
+public class TcpRequestProcessor {
 
     private static Log logger = LogFactory.getLog(TcpRequestProcessor.class);
 
@@ -26,12 +26,11 @@ public class TcpRequestProcessor implements Connection.Listener {
         this.taskForwarderService = taskForwarderService;
     }
 
-    @Override
     @Async
-    public void messageReceived(Connection connection, RequestDto requestDto) {
+    public void messageReceived(TcpConnection connection, RequestDto requestDto) {
         logger.info("start processing request " + requestDto.getId());
         try {
-            Result result = taskForwarderService.forwardWork(requestDto);
+            Result result = new Result(taskForwarderService.forwardWork(requestDto));
             ResponseDto responseDto = new ResponseDto(requestDto.getId(), result);
             connection.send(responseDto);
         } catch (WorkerNotFoundException | WorkerMethodNotFoundException | WrongParametersCountException | ProblemsWithReflectionException e) {
@@ -42,15 +41,5 @@ public class TcpRequestProcessor implements Connection.Listener {
             connection.send(new ResponseDto(requestDto.getId(), e.getMessage()));
         }
         logger.info("end processing request " + requestDto.getId());
-    }
-
-    @Override
-    public void connected(Connection connection) {
-
-    }
-
-    @Override
-    public void disconnected(Connection connection) {
-
     }
 }

@@ -1,7 +1,6 @@
 package com.ixtens.server.service;
 
 import com.ixtens.dto.RequestDto;
-import com.ixtens.dto.Result;
 import com.ixtens.server.service.exception.ProblemsWithReflectionException;
 import com.ixtens.server.service.exception.WorkerMethodNotFoundException;
 import com.ixtens.server.service.exception.WorkerNotFoundException;
@@ -27,7 +26,7 @@ public class TaskForwarderService {
 
     private static Log logger = LogFactory.getLog(TcpServer.class);
 
-    private Map<String, WorkerService> mapWithWorkers = new HashMap<>();
+    private Map<String, Object> mapWithWorkers = new HashMap<>();
 
     @PostConstruct
     public void postConstruct() throws IOException {
@@ -35,9 +34,9 @@ public class TaskForwarderService {
         logger.info("Loaded " + mapWithWorkers.size() + " workers");
     }
 
-    public Result forwardWork(RequestDto requestDto)
+    public Object forwardWork(RequestDto requestDto)
             throws WorkerNotFoundException, WorkerMethodNotFoundException, WrongParametersCountException, ProblemsWithReflectionException {
-        WorkerService workerService = Optional.ofNullable(mapWithWorkers.get(requestDto.getService()))
+        Object workerService = Optional.ofNullable(mapWithWorkers.get(requestDto.getService()))
                 .orElseThrow(() -> new WorkerNotFoundException(requestDto.getService()));
         Method method = Arrays
                 .stream(workerService.getClass().getDeclaredMethods())
@@ -51,9 +50,9 @@ public class TaskForwarderService {
         }
         try {
             if (parameterCount == 0) {
-                return (Result) method.invoke(workerService);
+                return method.invoke(workerService);
             } else {
-                return (Result) method.invoke(workerService, requestDto.getRequest().getParams());
+                return method.invoke(workerService, requestDto.getRequest().getParams());
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             logger.error(e.getMessage());

@@ -1,7 +1,6 @@
 package com.ixtens.dto;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public class RequestDto extends Dto {
 
@@ -9,7 +8,7 @@ public class RequestDto extends Dto {
     private String method;
     private Request request;
 
-    public RequestDto(UUID id, String service, String method, Request request) {
+    public RequestDto(Integer id, String service, String method, Request request) {
         super(id);
         this.service = service;
         this.method = method;

@@ -1,18 +1,16 @@
 package com.ixtens.dto;
 
-import java.util.UUID;
-
 public class ResponseDto extends Dto {
 
     private Result result;
     private String errorCode;
 
-    public ResponseDto(UUID id, Result result) {
+    public ResponseDto(Integer id, Result result) {
         super(id);
         this.result = result;
     }
 
-    public ResponseDto(UUID id, String errorCode){
+    public ResponseDto(Integer id, String errorCode) {
         super(id);
         this.errorCode = errorCode;
     }
@@ -21,7 +19,7 @@ public class ResponseDto extends Dto {
     public String toString() {
         return "ResponseDto{" +
                "id=" + getId() +
-               "result=" + result +
+               ", result=" + result +
                ", errorCode=" + errorCode +
                '}';
     }

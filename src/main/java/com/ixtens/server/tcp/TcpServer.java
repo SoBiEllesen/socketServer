@@ -1,6 +1,5 @@
 package com.ixtens.server.tcp;
 
-import com.ixtens.dto.RequestDto;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,22 +8,18 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
-public class TcpServer implements Connection.Listener {
+public class TcpServer {
 
     private static Log logger = LogFactory.getLog(TcpServer.class);
 
     private ServerSocket serverSocket;
-    private List<Connection> connections = new ArrayList<>();
-    private final List<Connection.Listener> listeners;
+    private final TcpRequestProcessor tcpRequestProcessor;
 
     @Autowired
-    public TcpServer(List<Connection.Listener> listeners) {
-        this.listeners = listeners;
-        this.listeners.add(this);
+    public TcpServer(TcpRequestProcessor tcpRequestProcessor) {
+        this.tcpRequestProcessor = tcpRequestProcessor;
     }
 
     public void setPort(Integer port) {
@@ -48,35 +43,13 @@ public class TcpServer implements Connection.Listener {
                     Socket socket = serverSocket.accept();
                     if (socket != null && socket.isConnected()) {
                         logger.info("open new socket");
-                        TcpConnection tcpConnection = new TcpConnection(socket);
+                        TcpConnection tcpConnection = new TcpConnection(socket, tcpRequestProcessor);
                         tcpConnection.start();
-                        tcpConnection.addListeners(listeners);
-                        connected(tcpConnection);
                     }
                 } catch (IOException e) {
                     logger.error(e);
                 }
             }
         }).start();
-    }
-
-    @Override
-    public void messageReceived(Connection connection, RequestDto requestDto) {
-        logger.info("Received new message from " + connection.getAddress().getCanonicalHostName());
-        logger.info("Class name: " + requestDto.getClass().getCanonicalName() + ", toString: " + requestDto.toString());
-    }
-
-    @Override
-    public void connected(Connection connection) {
-        logger.trace("New connection! Ip: " + connection.getAddress().getCanonicalHostName() + ".");
-        connections.add(connection);
-        logger.trace("Current connections count: " + connections.size());
-    }
-
-    @Override
-    public void disconnected(Connection connection) {
-        logger.trace("Disconnect! Ip: " + connection.getAddress().getCanonicalHostName() + ".");
-        connections.remove(connection);
-        logger.trace("Current connections count: " + connections.size());
     }
 }
